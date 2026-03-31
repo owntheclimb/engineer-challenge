@@ -73,6 +73,28 @@ CREATE INDEX idx_models_status ON models(status);
 
 -- YOUR SQL GOES BELOW THIS LINE
 
+CREATE TABLE deployments (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  model_id uuid NOT NULL,
+  environment VARCHAR(20) NOT NULL
+    CHECK (environment IN ('development', 'staging', 'production')),
+  deployed_by UUID NOT NULL,
+  deployed_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  status VARCHAR(20) NOT NULL
+    CHECK (status IN ('active', 'inactive', 'failed')),
+    notes TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  CONSTRAINT fk_deployments_model_id FOREIGN KEY (model_id)
+    REFERENCES models(id) ON DELETE CASCADE,
+  CONSTRAINT fk_deployments_deployed_by FOREIGN KEY (deployed_by)
+    REFERENCES users(id) ON DELETE CASCADE,
+  CONSTRAINT uq_deployments_model_id_environment UNIQUE(model_id, environment)
+);
+
+CREATE INDEX idx_deployments_model_id ON deployments(model_id);
+CREATE INDEX idx_deployments_deployed_by ON deployments(deployed_by);
+CREATE INDEX idx_deployments_environment ON deployments(environment);
+
 
 
 -- ============================================================================
@@ -87,3 +109,33 @@ INSERT INTO providers (id, name, website) VALUES
   ('c3d4e5f6-a7b8-9012-cdef-123456789012', 'Anthropic', 'https://anthropic.com'),
   ('d4e5f6a7-b8c9-0123-defa-234567890123', 'OpenAI', 'https://openai.com'),
   ('e5f6a7b8-c9d0-1234-efab-345678901234', 'Google', 'https://ai.google');
+
+  INSERT INTO models (name, model_id, provider_id, context_window, status, notes, added_by)
+  VALUES
+  (
+    'Claude Sonnet 4',
+    'claude-sonnet-4-latest',
+    'c3d4e5f6-a7b8-9012-cdef-123456789012',
+    '200000',
+    'approved',
+    'Claude message api id',
+    'a1b2c3d4-e5f6-7890-abcd-ef1234567890'
+  ),
+    (
+    'GPT-4.1',
+    'gpt-4.2-latest',
+    'd4e5f6a7-b8c9-0123-defa-234567890123',
+    '200000',
+    'approved',
+    'gpt message api id',
+    'b2c3d4e5-f6a7-8901-bcde-f12345678901'
+  ),
+    (
+    'gemini 3.5',
+    'gemini-3.5',
+    'e5f6a7b8-c9d0-1234-efab-345678901234',
+    '200000',
+    'approved',
+    'gemini message api id',
+    'b2c3d4e5-f6a7-8901-bcde-f12345678901'
+  )
